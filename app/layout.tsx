@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Inter_Tight } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { Nav } from "@/components/shared/nav";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -31,7 +32,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={cn(playfair.variable, interTight.variable)}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <Nav />
+        {children}
+      </body>
     </html>
   );
 }

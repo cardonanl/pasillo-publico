@@ -40,7 +40,54 @@ export async function updateSession(request: NextRequest) {
 
   // No ejecutar código entre createServerClient y getUser():
   // un error sutil podría dificultar la depuración de sesiones cerradas al azar.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const path = request.nextUrl.pathname;
+  const protectedPrefixes = [
+    "/mi-perfil",
+    "/subir-obra",
+    "/publicar-servicio",
+    "/admin",
+  ];
+  const isProtected = protectedPrefixes.some(
+    (p) => path === p || path.startsWith(`${p}/`)
+  );
+
+  // Sin sesión en ruta protegida → a /login.
+  if (isProtected && !user) {
+    return redirectTo(request, supabaseResponse, "/login");
+  }
+
+  // /admin requiere además is_admin.
+  const isAdminPath = path === "/admin" || path.startsWith("/admin/");
+  if (isAdminPath && user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.is_admin) {
+      return redirectTo(request, supabaseResponse, "/");
+    }
+  }
 
   return supabaseResponse;
+}
+
+// Redirige preservando las cookies de sesión que pudo refrescar getUser().
+function redirectTo(
+  request: NextRequest,
+  supabaseResponse: NextResponse,
+  pathname: string
+) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  const redirectResponse = NextResponse.redirect(url);
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie);
+  });
+  return redirectResponse;
 }
