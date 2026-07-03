@@ -159,6 +159,10 @@ PRIMARY KEY (artwork_id, category_id)
 | `artworks` | público | 10 MB |
 | `services` | público | 10 MB |
 
+**Convención de rutas:** cada archivo se sube bajo `{uid}/{nombre}-{timestamp}.{ext}`.  
+Las políticas RLS de Storage validan que `(storage.foldername(name))[1] = auth.uid()::text`, por lo que el primer segmento **debe** ser el UUID del usuario autenticado.  
+Ejemplo: `abc123.../avatar-1719999999.webp`.
+
 ### RLS (Row Level Security)
 - `profiles`: lectura pública si `is_approved = true`; escritura solo del propio usuario; admin todo
 - `artworks`: lectura pública si el artista está aprobado; escritura solo del `artist_id` dueño; admin todo
