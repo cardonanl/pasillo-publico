@@ -141,7 +141,7 @@ name  text UNIQUE NOT NULL
 ```sql
 id    serial PRIMARY KEY
 name  text UNIQUE NOT NULL
--- Iniciales: 'Muralismo', 'Retrato por comisión', 'Escritura y guiones', 'Ilustración', 'Diseño gráfico', 'Fotografía por encargo', 'Tatuaje', 'Otro'
+-- Iniciales: 'Muralismo', 'Retrato por comisión', 'Pintura por comisión', 'Escritura y guiones', 'Ilustración', 'Diseño gráfico', 'Fotografía por encargo', 'Tatuaje', 'UI/UX', 'Web design', 'Front end', 'NFTs y crypto art', 'Visuales para música', 'Curaduría', 'Valorizaciones', 'Otro'
 ```
 
 ### Tabla: `artwork_category_map`

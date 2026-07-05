@@ -93,9 +93,11 @@ insert into public.artwork_categories (name) values
 on conflict (name) do nothing;
 
 insert into public.service_categories (name) values
-  ('Muralismo'), ('Retrato por comisión'), ('Escritura y guiones'),
-  ('Ilustración'), ('Diseño gráfico'), ('Fotografía por encargo'),
-  ('Tatuaje'), ('Otro')
+  ('Muralismo'), ('Retrato por comisión'), ('Pintura por comisión'),
+  ('Escritura y guiones'), ('Ilustración'), ('Diseño gráfico'),
+  ('Fotografía por encargo'), ('Tatuaje'), ('UI/UX'), ('Web design'),
+  ('Front end'), ('NFTs y crypto art'), ('Visuales para música'),
+  ('Curaduría'), ('Valorizaciones'), ('Otro')
 on conflict (name) do nothing;
 
 -- ---------------------------------------------------------------------
