@@ -67,7 +67,7 @@ export default async function MiPerfilPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pt-4">
+          <div className="flex flex-wrap items-center gap-2 pt-4">
             <Link
               href="/mi-perfil/editar"
               className={`${pillBase} bg-pp-yellow shadow-[3px_3px_0_#0A0A0A] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_#0A0A0A]`}
@@ -76,6 +76,12 @@ export default async function MiPerfilPage() {
             </Link>
             {profile.is_artist && profile.is_approved && (
               <>
+                <Link
+                  href={`/artista/${profile.username}`}
+                  className={`${pillBase} bg-white hover:bg-pp-bg2`}
+                >
+                  Ver galería ↗
+                </Link>
                 <Link
                   href="/subir-obra"
                   className={`${pillBase} bg-white hover:bg-pp-bg2`}
