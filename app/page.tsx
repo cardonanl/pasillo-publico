@@ -52,7 +52,7 @@ export default async function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           1. HERO
       ───────────────────────────────────────────────────────────── */}
-      <section className="border-b border-pp-ink">
+      <section className="overflow-hidden border-b border-pp-ink">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-12 lg:gap-4">
 
           {/* ── Texto ── */}
@@ -100,33 +100,33 @@ export default async function LandingPage() {
 
           {/* ── Composición decorativa — solo desktop ── */}
           <div
-            className="relative hidden h-[420px] w-[340px] flex-shrink-0 lg:block"
+            className="relative hidden h-[500px] w-[400px] flex-shrink-0 lg:mr-10 lg:block"
             aria-hidden="true"
           >
             {/* Marco principal — 240×300 */}
-            <div className="absolute right-0 top-0 h-[300px] w-[240px] rotate-[4deg] overflow-hidden rounded-md border-2 border-pp-ink bg-pp-bg2 shadow-[6px_6px_0_#0A0A0A]">
+            <div className="absolute right-0 top-0 h-[360px] w-[290px] rotate-[4deg] overflow-hidden rounded-md border-2 border-pp-ink bg-pp-bg2 shadow-[6px_6px_0_#0A0A0A]">
               <Image
                 src="/hero/obra-1.jpg"
                 alt=""
                 fill
                 className="object-cover"
-                sizes="240px"
+                sizes="290px"
               />
             </div>
 
-            {/* Marco secundario — 180×220 solapado abajo-izquierda */}
-            <div className="absolute bottom-0 left-0 h-[220px] w-[180px] -rotate-[6deg] overflow-hidden rounded-md border-2 border-pp-ink bg-pp-bg2 shadow-[5px_5px_0_#0A0A0A]">
+            {/* Marco secundario — solapado abajo-izquierda */}
+            <div className="absolute bottom-0 left-0 h-[270px] w-[220px] -rotate-[6deg] overflow-hidden rounded-md border-2 border-pp-ink bg-pp-bg2 shadow-[5px_5px_0_#0A0A0A]">
               <Image
                 src="/hero/obra-2.jpg"
                 alt=""
                 fill
                 className="object-cover"
-                sizes="180px"
+                sizes="220px"
               />
             </div>
 
             {/* Sticker — entre los dos marcos */}
-            <div className="absolute bottom-[130px] right-[30px] rotate-[10deg]">
+            <div className="absolute bottom-[160px] right-[30px] rotate-[10deg]">
               <div className="rounded-full border-2 border-pp-ink bg-pp-yellow px-4 py-2 text-xs font-bold uppercase tracking-wide text-pp-ink shadow-[3px_3px_0_#0A0A0A]">
                 ✦ Desde $40.000
               </div>
@@ -143,8 +143,13 @@ export default async function LandingPage() {
             </span>
 
             {/* Estrella pequeña — zona central */}
-            <span className="absolute bottom-[200px] left-[155px] font-display text-xl text-pp-yellow [text-shadow:2px_2px_0_#0A0A0A]">
+            <span className="absolute bottom-[240px] left-[180px] font-display text-xl text-pp-yellow [text-shadow:2px_2px_0_#0A0A0A]">
               ✦
+            </span>
+
+            {/* Ojo — debajo y a la izquierda de los marcos */}
+            <span className="absolute bottom-20 left-0 -rotate-[8deg] text-2xl text-pp-ink">
+              𓁹
             </span>
           </div>
 
