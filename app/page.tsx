@@ -191,11 +191,11 @@ export default async function LandingPage() {
           <span className="inline-block rounded-full border border-pp-ink bg-pp-yellow px-3 py-0.5 text-xs font-bold text-pp-ink">
             Obras
           </span>
-          <h2 className="mt-4 font-display text-3xl font-black leading-tight text-pp-ink sm:text-4xl">
+          <h2 className="mt-4 font-display text-4xl font-black leading-tight text-pp-ink sm:text-5xl">
             Piezas listas{" "}
             <em className="italic text-pp-blue">para irse.</em>
           </h2>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-pp-ink2">
+          <p className="mt-4 max-w-sm text-base leading-relaxed text-pp-ink2">
             Pinturas, fotografías, esculturas y arte digital de artistas
             colombianos listos para vivir en tu espacio.
           </p>
@@ -212,11 +212,11 @@ export default async function LandingPage() {
           <span className="inline-block rounded-full border border-pp-blue bg-white px-3 py-0.5 text-xs font-bold text-pp-blue">
             Servicios
           </span>
-          <h2 className="mt-4 font-display text-3xl font-black leading-tight text-pp-ink sm:text-4xl">
+          <h2 className="mt-4 font-display text-4xl font-black leading-tight text-pp-ink sm:text-5xl">
             Talento{" "}
             <em className="italic text-pp-blue">disponible.</em>
           </h2>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-pp-ink2">
+          <p className="mt-4 max-w-sm text-base leading-relaxed text-pp-ink2">
             Murales, retratos, guiones, diseño y más — por encargo, a tu
             medida, directo del artista.
           </p>
