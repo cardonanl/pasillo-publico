@@ -1,12 +1,31 @@
 import { z } from "zod";
 
+const SERVICE_CATEGORIES = [
+  "Muralismo",
+  "Retrato por comisión",
+  "Pintura por comisión",
+  "Escritura y guiones",
+  "Ilustración",
+  "Diseño gráfico",
+  "Fotografía por encargo",
+  "Tatuaje",
+  "UI/UX",
+  "Web design",
+  "Front end",
+  "NFTs y crypto art",
+  "Visuales para música",
+  "Curaduría",
+  "Valorizaciones",
+  "Otro",
+] as const;
+
 export const serviceSchema = z.object({
   title: z
     .string()
     .min(1, "El título es obligatorio")
     .max(200, "Máximo 200 caracteres"),
   description: z.string().max(1000, "Máximo 1000 caracteres").optional(),
-  category: z.string().min(1, "Selecciona una categoría"),
+  category: z.enum(SERVICE_CATEGORIES, { error: "Categoría inválida" }),
   pricing_type: z.enum(["fixed", "from", "negotiable"] as const, {
     error: "Selecciona el tipo de precio",
   }),

@@ -52,7 +52,7 @@ export function ServiceForm({ profileId, categories }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<ServiceInput>({
     resolver: zodResolver(serviceSchema),
-    defaultValues: { pricing_type: "fixed", category: "" },
+    defaultValues: { pricing_type: "fixed" as const },
   });
 
   const pricingType = watch("pricing_type");
@@ -291,7 +291,7 @@ export function ServiceForm({ profileId, categories }: Props) {
                   key={cat.id}
                   type="button"
                   onClick={() =>
-                    setValue("category", cat.name, { shouldValidate: true })
+                    setValue("category", cat.name as ServiceInput["category"], { shouldValidate: true })
                   }
                   disabled={busy}
                   className={`inline-flex items-center rounded-full border px-3 py-1 text-sm transition-colors ${

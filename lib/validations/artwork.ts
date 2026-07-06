@@ -31,7 +31,9 @@ export const artworkSchema = z.object({
   status: z.enum(["available", "not_for_sale"] as const, {
     error: "Selecciona el estado de la obra",
   }),
-  categories: z.array(z.string()).optional(),
+  categories: z
+    .array(z.string().regex(/^\d+$/, "ID de categoría inválido"))
+    .optional(),
 });
 
 export type ArtworkInput = z.infer<typeof artworkSchema>;

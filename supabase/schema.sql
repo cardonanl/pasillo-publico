@@ -261,7 +261,10 @@ create policy artworks_select on public.artworks
 
 drop policy if exists artworks_insert on public.artworks;
 create policy artworks_insert on public.artworks
-  for insert with check (auth.uid() = artist_id);
+  for insert with check (
+    auth.uid() = artist_id
+    and public.is_approved_artist(auth.uid())
+  );
 
 drop policy if exists artworks_update on public.artworks;
 create policy artworks_update on public.artworks
@@ -285,7 +288,10 @@ create policy services_select on public.services
 
 drop policy if exists services_insert on public.services;
 create policy services_insert on public.services
-  for insert with check (auth.uid() = artist_id);
+  for insert with check (
+    auth.uid() = artist_id
+    and public.is_approved_artist(auth.uid())
+  );
 
 drop policy if exists services_update on public.services;
 create policy services_update on public.services
@@ -350,15 +356,16 @@ create policy service_categories_write on public.service_categories
 --    (El código de subida debe seguir esta convención.)
 -- ---------------------------------------------------------------------
 
-insert into storage.buckets (id, name, public, file_size_limit)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
-  ('avatars',  'avatars',  true, 2097152),   -- 2 MB
-  ('banners',  'banners',  true, 5242880),   -- 5 MB
-  ('artworks', 'artworks', true, 10485760),  -- 10 MB
-  ('services', 'services', true, 10485760)   -- 10 MB
+  ('avatars',  'avatars',  true, 2097152,  array['image/jpeg','image/png','image/webp']),
+  ('banners',  'banners',  true, 5242880,  array['image/jpeg','image/png','image/webp']),
+  ('artworks', 'artworks', true, 10485760, array['image/jpeg','image/png','image/webp','image/gif']),
+  ('services', 'services', true, 10485760, array['image/jpeg','image/png','image/webp','image/gif'])
 on conflict (id) do update
-  set public = excluded.public,
-      file_size_limit = excluded.file_size_limit;
+  set public             = excluded.public,
+      file_size_limit    = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
 
 -- Lectura pública de los 4 buckets.
 drop policy if exists storage_public_read on storage.objects;
