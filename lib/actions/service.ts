@@ -6,6 +6,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { serviceSchema, type ServiceInput } from "@/lib/validations/service";
 
+function storagePath(url: string): string | null {
+  const m = url.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
 export async function createService(
   input: ServiceInput,
   imageUrls: string[]
@@ -61,5 +66,37 @@ export async function createService(
   }
 
   revalidatePath("/mi-perfil");
+  return {};
+}
+
+export async function deleteService(id: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) return { error: "No autenticado." };
+
+  const { data: service } = await supabase
+    .from("services")
+    .select("artist_id, images")
+    .eq("id", id)
+    .single();
+
+  if (!service) return { error: "Servicio no encontrado." };
+  if (service.artist_id !== user.id) return { error: "No autorizado." };
+
+  const paths = (service.images as string[])
+    .map(storagePath)
+    .filter((p): p is string => p !== null);
+  if (paths.length > 0) {
+    await supabase.storage.from("services").remove(paths);
+  }
+
+  const { error } = await supabase.from("services").delete().eq("id", id);
+  if (error) return { error: "No se pudo eliminar el servicio." };
+
+  revalidatePath("/mi-perfil");
+  revalidatePath("/servicios");
   return {};
 }
