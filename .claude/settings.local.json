@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npx tsc *)",
       "Bash(dir C:\\\\Users\\\\nicol\\\\Documents\\\\Proyectos personales\\\\pasillo-publico *)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\nicol\\\\Documents\\\\Proyectos personales\\\\pasillo-publico\\\\app\\\\auth\\\\callback\")",
+      "Bash(Out-Null)"
     ]
   }
 }

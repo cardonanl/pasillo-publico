@@ -31,7 +31,7 @@ export function RegisterForm() {
       options: {
         // El trigger handle_new_user usa este username para crear el perfil.
         data: { username: values.username },
-        emailRedirectTo: `${window.location.origin}/login`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 

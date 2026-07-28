@@ -96,6 +96,12 @@ export default async function LandingPage() {
                 Soy artista →
               </Link>
             </div>
+            <Link
+              href="/manifiesto"
+              className="mt-3 inline-block text-sm text-pp-ink2 underline underline-offset-4 hover:text-pp-ink"
+            >
+              ¿De qué va esto?
+            </Link>
           </div>
 
           {/* ── Composición decorativa — solo desktop ── */}

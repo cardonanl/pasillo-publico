@@ -134,7 +134,7 @@ updated_at    timestamptz DEFAULT now()
 ```sql
 id    serial PRIMARY KEY
 name  text UNIQUE NOT NULL
--- Iniciales: 'Pintura', 'Dibujo', 'Fotografía', 'Escultura', 'Arte digital', 'Grabado', 'Ilustración', 'Otro'
+-- Iniciales: 'Pintura', 'Dibujo', 'Fotografía', 'Escultura', 'Arte digital', 'Grabado', 'Ilustración', 'Bordado', 'Moda personalizada', 'Tapetes', 'Otro'
 ```
 
 ### Tabla: `service_categories` (lookup)
