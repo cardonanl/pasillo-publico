@@ -42,8 +42,8 @@ export default function ManifiestoPage() {
         <div className="mt-12 space-y-8 text-base leading-relaxed text-pp-ink sm:text-lg">
 
           <blockquote className="border-l-2 border-pp-yellow pl-6 font-display text-2xl font-bold italic leading-snug text-pp-ink sm:text-3xl">
-            "No hace falta una galería para que tu obra viva — ni una agencia
-            para que tu talento trabaje."
+            &ldquo;No hace falta una galería para que tu obra viva — ni una agencia
+            para que tu talento trabaje.&rdquo;
           </blockquote>
 
           <p className="text-pp-ink2">
@@ -57,7 +57,7 @@ export default function ManifiestoPage() {
           </p>
 
           <blockquote className="border-l-2 border-pp-yellow pl-6 font-display text-xl font-bold italic leading-snug text-pp-ink sm:text-2xl">
-            "Cita secundaria del manifiesto — reemplazar."
+            &ldquo;Cita secundaria del manifiesto — reemplazar.&rdquo;
           </blockquote>
 
           <p className="text-pp-ink2">
