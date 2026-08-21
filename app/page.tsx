@@ -82,7 +82,7 @@ export default async function LandingPage() {
               Pinturas · Murales · Guiones · Fotografía · Retratos · Diseño
             </p>
 
-            <div className="mt-6 flex flex-wrap items-center gap-5">
+            <div className="mt-6 flex flex-wrap items-center gap-4">
               <Link
                 href="/explorar"
                 className="rounded-full border border-pp-ink bg-pp-yellow px-7 py-3.5 text-base font-medium text-pp-ink shadow-[4px_4px_0_#0A0A0A] transition-transform hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0_#0A0A0A]"
@@ -91,17 +91,17 @@ export default async function LandingPage() {
               </Link>
               <Link
                 href="/registro"
-                className="font-medium text-pp-blue underline decoration-wavy decoration-pp-blue underline-offset-4 hover:opacity-70"
+                className="rounded-full border border-pp-ink bg-pp-ink px-7 py-3.5 text-base font-medium text-white shadow-[4px_4px_0_#1AA6C9] transition-transform hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0_#1AA6C9]"
               >
-                Soy artista →
+                Soy artista
+              </Link>
+              <Link
+                href="/manifiesto"
+                className="rounded-full border border-pp-ink bg-white px-7 py-3.5 text-base font-medium text-pp-ink shadow-[4px_4px_0_#0A0A0A] transition-transform hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0_#0A0A0A]"
+              >
+                ¿De qué va esto?
               </Link>
             </div>
-            <Link
-              href="/manifiesto"
-              className="mt-3 inline-block text-sm text-pp-ink2 underline underline-offset-4 hover:text-pp-ink"
-            >
-              ¿De qué va esto?
-            </Link>
           </div>
 
           {/* ── Composición decorativa — solo desktop ── */}
