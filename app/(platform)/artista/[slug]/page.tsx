@@ -4,6 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { safeHref } from "@/lib/utils";
 import { ArtworkCard } from "@/components/artwork/artwork-card";
 import { ServiceCard } from "@/components/service/service-card";
 
@@ -156,9 +157,9 @@ export default async function ArtistaPage({
                 @{profile.instagram_url}
               </a>
             )}
-            {profile.website_url && (
+            {safeHref(profile.website_url) && (
               <a
-                href={profile.website_url}
+                href={safeHref(profile.website_url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center rounded-full border border-pp-ink bg-white px-4 py-2 text-sm font-medium text-pp-ink transition-colors hover:bg-pp-bg2"
@@ -270,9 +271,9 @@ export default async function ArtistaPage({
                   Instagram
                 </a>
               )}
-              {profile.website_url && (
+              {safeHref(profile.website_url) && (
                 <a
-                  href={profile.website_url}
+                  href={safeHref(profile.website_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center rounded-full border border-pp-ink bg-white px-5 py-2.5 text-sm font-medium text-pp-ink transition-colors hover:bg-pp-bg2"

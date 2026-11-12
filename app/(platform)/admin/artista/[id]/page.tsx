@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { safeHref } from "@/lib/utils";
 import { ArtworkCard } from "@/components/artwork/artwork-card";
 import { ServiceCard } from "@/components/service/service-card";
 import { AdminActions } from "@/components/admin/admin-actions";
@@ -22,6 +23,15 @@ export default async function AdminArtistaPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  // Defensa en profundidad: el middleware ya filtra /admin, pero la página
+  // no debe depender solo de él.
+  const { data: me, error: meError } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single();
+  if (meError || !me?.is_admin) redirect("/");
 
   const artistId = params.id;
 
@@ -163,9 +173,9 @@ export default async function AdminArtistaPage({
                   @{profile.instagram_url}
                 </a>
               )}
-              {profile.website_url && (
+              {safeHref(profile.website_url) && (
                 <a
-                  href={profile.website_url}
+                  href={safeHref(profile.website_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-full border border-pp-border bg-pp-bg2 px-3 py-1 text-pp-ink hover:bg-pp-border"

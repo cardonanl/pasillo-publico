@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { isOwnStorageUrl } from "@/lib/utils";
 import { artworkSchema, type ArtworkInput } from "@/lib/validations/artwork";
 
 // Extrae el path relativo al bucket desde una URL pública de Storage.
@@ -25,13 +26,13 @@ export async function createArtwork(
   } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("is_artist, is_approved")
     .eq("id", user.id)
     .single();
 
-  if (!profile?.is_artist || !profile?.is_approved) {
+  if (profileError || !profile?.is_artist || !profile?.is_approved) {
     return { error: "Solo artistas aprobados pueden publicar obras." };
   }
 
@@ -40,6 +41,12 @@ export async function createArtwork(
 
   if (imageUrls.length === 0) {
     return { error: "Agrega al menos una imagen de la obra." };
+  }
+  if (imageUrls.length > 5) {
+    return { error: "Máximo 5 imágenes por obra." };
+  }
+  if (!imageUrls.every((url) => isOwnStorageUrl(url, "artworks", user.id))) {
+    return { error: "Imágenes inválidas." };
   }
 
   const {
@@ -74,12 +81,20 @@ export async function createArtwork(
   }
 
   if (categories && categories.length > 0) {
-    await supabase.from("artwork_category_map").insert(
-      categories.map((catId) => ({
-        artwork_id: artwork.id,
-        category_id: parseInt(catId, 10),
-      }))
-    );
+    const { error: catError } = await supabase
+      .from("artwork_category_map")
+      .insert(
+        categories.map((catId) => ({
+          artwork_id: artwork.id,
+          category_id: parseInt(catId, 10),
+        }))
+      );
+
+    if (catError) {
+      // Sin categorías válidas la obra queda a medias: se deshace.
+      await supabase.from("artworks").delete().eq("id", artwork.id);
+      return { error: "Categoría inválida. Intenta de nuevo." };
+    }
   }
 
   revalidatePath("/mi-perfil");
@@ -94,13 +109,13 @@ export async function deleteArtwork(id: string): Promise<{ error?: string }> {
   } = await supabase.auth.getUser();
   if (authError || !user) return { error: "No autenticado." };
 
-  const { data: artwork } = await supabase
+  const { data: artwork, error: fetchError } = await supabase
     .from("artworks")
     .select("artist_id, images")
     .eq("id", id)
     .single();
 
-  if (!artwork) return { error: "Obra no encontrada." };
+  if (fetchError || !artwork) return { error: "Obra no encontrada." };
   if (artwork.artist_id !== user.id) return { error: "No autorizado." };
 
   // Borrar imágenes del bucket (error de storage no bloquea el delete del registro)
@@ -108,7 +123,12 @@ export async function deleteArtwork(id: string): Promise<{ error?: string }> {
     .map(storagePath)
     .filter((p): p is string => p !== null);
   if (paths.length > 0) {
-    await supabase.storage.from("artworks").remove(paths);
+    const { error: storageError } = await supabase.storage
+      .from("artworks")
+      .remove(paths);
+    if (storageError) {
+      console.error("deleteArtwork: no se borraron imágenes", storageError.message);
+    }
   }
 
   const { error } = await supabase.from("artworks").delete().eq("id", id);

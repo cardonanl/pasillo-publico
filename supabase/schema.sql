@@ -150,6 +150,11 @@ declare
   base_username  text;
   final_username text;
   suffix         int := 0;
+  reserved       text[] := array[
+    'admin', 'administrador', 'root', 'soporte', 'support', 'ayuda',
+    'pasillo', 'pasillo-publico', 'pasillopublico', 'oficial', 'staff',
+    'moderador', 'sistema', 'usuario'
+  ];
 begin
   -- 1) Origen: username pedido en el registro, o parte local del email.
   base_username := lower(coalesce(
@@ -163,10 +168,12 @@ begin
   if base_username is null or base_username = '' then
     base_username := 'usuario';
   end if;
+  base_username := left(base_username, 30);
 
-  -- 3) Garantizar unicidad (username es UNIQUE NOT NULL).
+  -- 3) Garantizar unicidad (username es UNIQUE NOT NULL) y evitar reservados.
   final_username := base_username;
-  while exists (select 1 from public.profiles where username = final_username) loop
+  while final_username = any(reserved)
+     or exists (select 1 from public.profiles where username = final_username) loop
     suffix := suffix + 1;
     final_username := base_username || '-' || suffix;
   end loop;
@@ -175,7 +182,7 @@ begin
   values (
     new.id,
     final_username,
-    nullif(new.raw_user_meta_data->>'full_name', '')
+    left(nullif(new.raw_user_meta_data->>'full_name', ''), 100)
   );
 
   return new;
@@ -232,13 +239,13 @@ create policy profiles_select on public.profiles
     or public.is_admin()
   );
 
--- Inserción: solo el propio usuario (el trigger ya lo crea con SECURITY DEFINER,
--- esta policy cubre inserciones manuales desde el cliente).
+-- Inserción: sin policy a propósito. El perfil lo crea handle_new_user
+-- (SECURITY DEFINER); un INSERT desde el cliente permitiría is_admin = true.
 drop policy if exists profiles_insert on public.profiles;
-create policy profiles_insert on public.profiles
-  for insert with check (auth.uid() = id);
 
 -- Actualización: el propio usuario o admin.
+-- Las columnas sensibles (is_admin, is_approved, username...) las protege
+-- el trigger profiles_protect_columns (sección 8).
 drop policy if exists profiles_update on public.profiles;
 create policy profiles_update on public.profiles
   for update using (auth.uid() = id or public.is_admin())
@@ -375,11 +382,16 @@ create policy storage_public_read on storage.objects
   );
 
 -- Subida: usuario autenticado, solo dentro de su propia carpeta {uid}/...
+-- artworks y services además exigen artista aprobado.
 drop policy if exists storage_insert_own on storage.objects;
 create policy storage_insert_own on storage.objects
   for insert to authenticated with check (
-    bucket_id in ('avatars', 'banners', 'artworks', 'services')
-    and (storage.foldername(name))[1] = auth.uid()::text
+    (storage.foldername(name))[1] = auth.uid()::text
+    and (
+      bucket_id in ('avatars', 'banners')
+      or (bucket_id in ('artworks', 'services')
+          and public.is_approved_artist(auth.uid()))
+    )
   );
 
 -- Actualizar / borrar: solo el dueño dentro de su carpeta.
@@ -388,6 +400,13 @@ create policy storage_update_own on storage.objects
   for update to authenticated using (
     bucket_id in ('avatars', 'banners', 'artworks', 'services')
     and (storage.foldername(name))[1] = auth.uid()::text
+  ) with check (
+    (storage.foldername(name))[1] = auth.uid()::text
+    and (
+      bucket_id in ('avatars', 'banners')
+      or (bucket_id in ('artworks', 'services')
+          and public.is_approved_artist(auth.uid()))
+    )
   );
 
 drop policy if exists storage_delete_own on storage.objects;
@@ -396,6 +415,138 @@ create policy storage_delete_own on storage.objects
     bucket_id in ('avatars', 'banners', 'artworks', 'services')
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- ---------------------------------------------------------------------
+-- 8. Columnas protegidas y validación en la DB
+--    profiles_update deja al usuario editar su fila; este trigger impide
+--    que se marque is_admin / is_approved o cambie su username.
+--    SECURITY INVOKER a propósito: current_user es el rol real de la
+--    petición (anon / authenticated / service_role / postgres).
+--    Los CHECK replican las reglas zod, porque el cliente puede escribir
+--    directo vía PostgREST. NOT VALID para no fallar con datos previos.
+-- ---------------------------------------------------------------------
+
+create or replace function public.protect_profile_columns()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  -- service_role, postgres (SQL Editor) y admins pueden todo.
+  if current_user not in ('anon', 'authenticated') or public.is_admin() then
+    return new;
+  end if;
+
+  if new.id          is distinct from old.id
+  or new.username    is distinct from old.username
+  or new.is_admin    is distinct from old.is_admin
+  or new.is_approved is distinct from old.is_approved
+  or new.created_at  is distinct from old.created_at then
+    raise exception 'No autorizado para modificar estos campos'
+      using errcode = '42501';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_protect_columns on public.profiles;
+create trigger profiles_protect_columns
+  before update on public.profiles
+  for each row execute function public.protect_profile_columns();
+
+-- ¿La URL es un objeto público de `bucket` dentro de la carpeta `owner`?
+create or replace function public.is_own_storage_url(url text, bucket text, owner uuid)
+returns boolean
+language sql
+immutable
+as $$
+  select url ~ ('^https://[^/]+/storage/v1/object/public/' || bucket || '/' || owner::text || '/[^/]+$');
+$$;
+
+create or replace function public.are_own_storage_urls(urls text[], bucket text, owner uuid)
+returns boolean
+language sql
+immutable
+as $$
+  select coalesce(bool_and(public.is_own_storage_url(u, bucket, owner)), true)
+  from unnest(urls) as u;
+$$;
+
+alter table public.profiles drop constraint if exists profiles_website_url_check;
+alter table public.profiles add constraint profiles_website_url_check
+  check (website_url is null or (website_url ~* '^https?://[^\s"<>]+$' and length(website_url) <= 500)) not valid;
+
+alter table public.profiles drop constraint if exists profiles_instagram_url_check;
+alter table public.profiles add constraint profiles_instagram_url_check
+  check (instagram_url is null or instagram_url ~ '^[A-Za-z0-9._]{1,30}$') not valid;
+
+alter table public.profiles drop constraint if exists profiles_whatsapp_check;
+alter table public.profiles add constraint profiles_whatsapp_check
+  check (whatsapp is null or whatsapp ~ '^\d{7,15}$') not valid;
+
+alter table public.profiles drop constraint if exists profiles_colors_check;
+alter table public.profiles add constraint profiles_colors_check
+  check (
+    (color_primary   is null or color_primary   ~ '^#[0-9A-Fa-f]{6}$') and
+    (color_secondary is null or color_secondary ~ '^#[0-9A-Fa-f]{6}$')
+  ) not valid;
+
+alter table public.profiles drop constraint if exists profiles_text_lengths_check;
+alter table public.profiles add constraint profiles_text_lengths_check
+  check (
+    coalesce(length(full_name), 0) <= 100 and
+    coalesce(length(bio), 0)       <= 500 and
+    coalesce(length(city), 0)      <= 100
+  ) not valid;
+
+alter table public.profiles drop constraint if exists profiles_images_check;
+alter table public.profiles add constraint profiles_images_check
+  check (
+    (avatar_url is null or public.is_own_storage_url(avatar_url, 'avatars', id)) and
+    (banner_url is null or public.is_own_storage_url(banner_url, 'banners', id))
+  ) not valid;
+
+alter table public.artworks drop constraint if exists artworks_images_check;
+alter table public.artworks add constraint artworks_images_check
+  check (
+    cardinality(images) between 1 and 5
+    and public.are_own_storage_urls(images, 'artworks', artist_id)
+  ) not valid;
+
+alter table public.artworks drop constraint if exists artworks_fields_check;
+alter table public.artworks add constraint artworks_fields_check
+  check (
+    length(title) between 1 and 200 and
+    coalesce(length(description), 0) <= 1000 and
+    coalesce(length(technique), 0)   <= 200 and
+    coalesce(length(dimensions), 0)  <= 100 and
+    (price is null or price >= 0) and
+    (year is null or year between 1800 and 2100)
+  ) not valid;
+
+alter table public.services drop constraint if exists services_images_check;
+alter table public.services add constraint services_images_check
+  check (
+    cardinality(images) <= 5
+    and public.are_own_storage_urls(images, 'services', artist_id)
+  ) not valid;
+
+alter table public.services drop constraint if exists services_fields_check;
+alter table public.services add constraint services_fields_check
+  check (
+    length(title) between 1 and 200 and
+    coalesce(length(description), 0)   <= 1000 and
+    coalesce(length(price_unit), 0)    <= 100 and
+    coalesce(length(delivery_time), 0) <= 100 and
+    (price is null or price >= 0)
+  ) not valid;
+
+-- La categoría debe existir en el lookup service_categories.
+alter table public.services drop constraint if exists services_category_fkey;
+alter table public.services add constraint services_category_fkey
+  foreign key (category) references public.service_categories(name)
+  on update cascade not valid;
 
 -- =====================================================================
 -- Fin del esquema inicial.

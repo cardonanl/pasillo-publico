@@ -25,6 +25,15 @@ export default async function AdminPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Defensa en profundidad: el middleware ya filtra /admin, pero la página
+  // no debe depender solo de él.
+  const { data: me, error: meError } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single();
+  if (meError || !me?.is_admin) redirect("/");
+
   const filtro = sp(searchParams.filtro) ?? "all";
 
   // ── Artistas ──

@@ -4,21 +4,41 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// ── Guard: verifica que el usuario activo sea admin ───────────────────────
-async function assertAdmin() {
+// ── Guard: verifica que el usuario activo sea admin; devuelve su id ───────
+async function assertAdmin(): Promise<string> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
     .single();
 
-  if (!profile?.is_admin) throw new Error("No autorizado");
+  if (error || !profile?.is_admin) throw new Error("No autorizado");
+  return user.id;
+}
+
+// ── Guard: las acciones destructivas no aplican a cuentas admin ───────────
+async function assertNotAdminTarget(
+  adminId: string,
+  targetId: string
+): Promise<string | null> {
+  if (adminId === targetId) {
+    return "No puedes aplicar esta acción a tu propia cuenta.";
+  }
+  const supabase = await createClient();
+  const { data: target, error } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", targetId)
+    .single();
+  if (error || !target) return "Usuario no encontrado.";
+  if (target.is_admin) return "No se puede aplicar esta acción a un admin.";
+  return null;
 }
 
 // ── Aprobar artista ───────────────────────────────────────────────────────
@@ -71,11 +91,15 @@ export async function rejectArtist(
 export async function deleteArtist(
   userId: string
 ): Promise<{ error?: string }> {
+  let adminId: string;
   try {
-    await assertAdmin();
+    adminId = await assertAdmin();
   } catch (e) {
     return { error: (e as Error).message };
   }
+
+  const targetError = await assertNotAdminTarget(adminId, userId);
+  if (targetError) return { error: targetError };
 
   const adminClient = createAdminClient();
   const { error } = await adminClient.auth.admin.deleteUser(userId);
@@ -90,11 +114,15 @@ export async function deleteArtist(
 export async function generateResetLink(
   userId: string
 ): Promise<{ link?: string; error?: string }> {
+  let adminId: string;
   try {
-    await assertAdmin();
+    adminId = await assertAdmin();
   } catch (e) {
     return { error: (e as Error).message };
   }
+
+  const targetError = await assertNotAdminTarget(adminId, userId);
+  if (targetError) return { error: targetError };
 
   const adminClient = createAdminClient();
 

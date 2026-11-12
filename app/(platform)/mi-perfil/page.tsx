@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { safeHref } from "@/lib/utils";
 import { ArtworkCard } from "@/components/artwork/artwork-card";
 import { DeleteArtworkButton } from "@/components/artwork/delete-artwork-button";
 import { ServiceCard } from "@/components/service/service-card";
@@ -184,9 +185,9 @@ export default async function MiPerfilPage() {
                 @{profile.instagram_url}
               </a>
             )}
-            {profile.website_url && (
+            {safeHref(profile.website_url) && (
               <a
-                href={profile.website_url}
+                href={safeHref(profile.website_url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`${pillBase} bg-white hover:bg-pp-bg2`}

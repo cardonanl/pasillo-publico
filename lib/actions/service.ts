@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { isOwnStorageUrl } from "@/lib/utils";
 import { serviceSchema, type ServiceInput } from "@/lib/validations/service";
 
 function storagePath(url: string): string | null {
@@ -22,18 +23,25 @@ export async function createService(
   } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("is_artist, is_approved")
     .eq("id", user.id)
     .single();
 
-  if (!profile?.is_artist || !profile?.is_approved) {
+  if (profileError || !profile?.is_artist || !profile?.is_approved) {
     return { error: "Solo artistas aprobados pueden publicar servicios." };
   }
 
   const parsed = serviceSchema.safeParse(input);
   if (!parsed.success) return { error: "Datos inválidos." };
+
+  if (imageUrls.length > 5) {
+    return { error: "Máximo 5 imágenes por servicio." };
+  }
+  if (!imageUrls.every((url) => isOwnStorageUrl(url, "services", user.id))) {
+    return { error: "Imágenes inválidas." };
+  }
 
   const {
     title,
@@ -77,20 +85,25 @@ export async function deleteService(id: string): Promise<{ error?: string }> {
   } = await supabase.auth.getUser();
   if (authError || !user) return { error: "No autenticado." };
 
-  const { data: service } = await supabase
+  const { data: service, error: fetchError } = await supabase
     .from("services")
     .select("artist_id, images")
     .eq("id", id)
     .single();
 
-  if (!service) return { error: "Servicio no encontrado." };
+  if (fetchError || !service) return { error: "Servicio no encontrado." };
   if (service.artist_id !== user.id) return { error: "No autorizado." };
 
   const paths = (service.images as string[])
     .map(storagePath)
     .filter((p): p is string => p !== null);
   if (paths.length > 0) {
-    await supabase.storage.from("services").remove(paths);
+    const { error: storageError } = await supabase.storage
+      .from("services")
+      .remove(paths);
+    if (storageError) {
+      console.error("deleteService: no se borraron imágenes", storageError.message);
+    }
   }
 
   const { error } = await supabase.from("services").delete().eq("id", id);
